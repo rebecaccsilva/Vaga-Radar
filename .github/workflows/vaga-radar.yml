@@ -1,0 +1,40 @@
+name: Vaga Radar
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+
+jobs:
+  buscar-vagas:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositório
+        uses: actions/checkout@v4
+
+      - name: Confugurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências
+        run: pip install requests
+
+      - name: Rodar o Vaga Radar
+        env:
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: python main.py
+
+      - name: Salvar histórico de vagas enviadas
+        run: |
+          git config user.name "vaga-radar-bot"
+          git config user.email "actions@github.com"
+          git add sent_jobs.json
+          git diff --staged --quiet || git commit -m "Atualiza historico"
+          git push
