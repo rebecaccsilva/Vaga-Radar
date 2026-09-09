@@ -188,3 +188,11 @@ ids_ja_enviados= carregar_enviados()
 vagas_novas= [vaga for vaga in vagas_relevantes if vaga['id'] not in ids_ja_enviados]
 
 print(f"Vagas novas (nunca enviadas): {len(vagas_novas)}")
+
+if vagas_novas:
+    enviar_email(vagas_novas)
+    ids_ja_enviados.update(vaga["id"] for vaga in vagas_novas)
+    salvar_enviados(ids_ja_enviados)
+    print("E-mail enviado!")
+else:
+    print("Nenhuma vaga nova pra enviar.")
