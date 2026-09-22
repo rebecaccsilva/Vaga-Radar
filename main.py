@@ -117,6 +117,44 @@ def buscar_github():
     return vagas
 
 
+def buscar_gupy():
+    vagas=[]
+    ids_vistos=set()
+    
+    for termo in GUPY_TERMOS_BUSCA:
+        try:
+            resp= requests.get("https://employability-portal.gupy.io/api/v1/jobs", params={"jobName":termo, "limit":50, "sortBy": "publishedDate", "sortOrder": "desc"}, timeout=15,)
+            resp.raise_for_status()
+            dados= resp.json()
+        except requests.RequestException as e:
+            print(f"[Gupy] erro na busca '{termo}': {e}")
+            continue
+        
+        for vaga in dados.get("data", []):
+            vid= str(vaga.get("id"))
+            if not vid or vid in ids_vistos:
+                continue
+            ids_vistos.add(vid)
+            
+            publicada= vaga.get("publishedDate")
+            if not publicada:
+                continue
+            
+            cidade = vaga.get("city") or ""
+            estado= vaga.get("state") or ""
+            local= ", ".join(p for p in [cidade, estado] if p) or "Não Informado"
+            
+            vagas.append({
+                "id": f"gupy-{vid}",
+                "titulo": vaga.get("name") or "",
+                "empresa": vaga.get("careerPageName") or "",
+                "local": local, 
+                "url": vaga.get("jobUrl") or "", "salario": "Não informado", "publicada_em": publicada, "remoto": bool(vaga.get("isRemoteWork"),)
+            })
+
+    print(f"[Gupy] buscadas: {len(vagas)}")
+    return vagas
+
 PALAVRAS_NIVEL = [
     "junior",
     "júnior",
@@ -155,6 +193,9 @@ PALAVRAS_EXCLUIR = [
     "architect",
     "master",
 ]
+
+GUPY_TERMOS_BUSCA= ["estágio", "júnior", "trainee", "jovem aprendiz"]
+
 LIMITE_HORAS = 30 * 24  # 30 dias em horas
 ARQUIVOS_ENVIADOS = "sent_jobs.json"
 
@@ -217,7 +258,7 @@ def enviar_email(vagas):
         servidor.sendmail(EMAIL_FROM, EMAIL_TO, mensagem.as_string())
 
 
-vagas_simplificadas = buscar_remotive() + buscar_arbeitnow() + buscar_github()
+vagas_simplificadas = buscar_remotive() + buscar_arbeitnow() + buscar_github() + buscar_gupy()
 print(f"Total de vagas coletadas: {len(vagas_simplificadas)}")
 
 
