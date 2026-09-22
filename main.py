@@ -5,6 +5,8 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import re
+import requests
 
 
 def horas_desde_publicacao(data_publicacao_str):
@@ -68,6 +70,34 @@ def buscar_arbeitnow():
     return vagas_simplificadas
 
 
+def buscar_github():
+    vagas=[]
+    for repo in REPOS_GITHUB:
+        try:
+            resp = requests.get(f"https://api.github.com/repos/{repo}/issues", params={"state":"open", "per_page":100}, headers={"Accept":"application/vnd.github+json"}, timeout=15,)
+            resp.raise_for_status()
+            issues= resp.json()
+        except requests.RequestException as e:
+            print(f"[GitHub] erro ao buscar {repo}: {e}")
+            continue
+
+        for issue in issues:
+            if "pull_requests" in issue:
+                continue  #é um PR n uma vaga
+
+            titulo_bruto= issue["title"]
+            match= re.match(r"\[(.*?)\]\s*(.*)", titulo_bruto)
+            if match:
+                cidade, titulo= match.group(1), match.group(2)
+            else:
+                cidade, titulo= "", titulo_bruto
+
+            vagas.append({"id": f"github-{repo.split('/')[0]}-{issue['number']}", "titulo": titulo, "empresa": "", "local": cidade, "descricao": issue.get("body") or "", "url": issue["html_url"], "publicada_em": issue["created_at"]})
+
+    print(f"[GitHub] buscadas: {len(vagas)}")
+    return vagas
+
+
 PALAVRAS_NIVEL = [
     "junior",
     "júnior",
@@ -104,9 +134,12 @@ PALAVRAS_EXCLUIR = [
     "manager",
     "head of",
     "architect",
+    "master"
 ]
 LIMITE_HORAS = 30 * 24  # 30 dias em horas
 ARQUIVOS_ENVIADOS = "sent_jobs.json"
+
+REPOS_GITHUB= ["frontendbr/vagas", "backend-br/vagas"]
 
 EMAIL_FROM = os.environ.get("EMAIL_FROM")
 EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
