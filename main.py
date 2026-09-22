@@ -92,7 +92,7 @@ def buscar_github():
             else:
                 cidade, titulo= "", titulo_bruto
 
-            vagas.append({"id": f"github-{repo.split('/')[0]}-{issue['number']}", "titulo": titulo, "empresa": "", "local": cidade, "descricao": issue.get("body") or "", "url": issue["html_url"], "publicada_em": issue["created_at"]})
+            vagas.append( {"id": f"github-{repo.split('/')[0]}-{issue['number']}", "titulo": titulo, "empresa": "", "local": cidade, "descricao": issue.get("body") or "", "url": issue["html_url"], "publicada_em": issue["created_at"]})
 
     print(f"[GitHub] buscadas: {len(vagas)}")
     return vagas
@@ -223,3 +223,4 @@ if vagas_novas:
     print("E-mail enviado!")
 else:
     print("Nenhuma vaga nova pra enviar.")
+
