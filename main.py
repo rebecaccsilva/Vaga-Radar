@@ -87,8 +87,8 @@ def buscar_github():
             continue
 
         for issue in issues:
-            if "pull_requests" in issue:
-                continue  # é um PR n uma vaga
+            if "pull_request" in issue:
+                continue  
 
             titulo_bruto = issue["title"]
             match = re.match(r"\[(.*?)\]\s*(.*)", titulo_bruto)
@@ -96,6 +96,8 @@ def buscar_github():
                 cidade, titulo = match.group(1), match.group(2)
             else:
                 cidade, titulo = "", titulo_bruto
+                
+            remoto = "remoto" in cidade.lower() or "remote" in cidade.lower()
 
             vagas.append(
                 {
@@ -106,6 +108,8 @@ def buscar_github():
                     "descricao": issue.get("body") or "",
                     "url": issue["html_url"],
                     "publicada_em": issue["created_at"],
+                    "salario": "Não informado",
+                    "remoto": remoto,
                 }
             )
 
