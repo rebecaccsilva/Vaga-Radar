@@ -71,28 +71,43 @@ def buscar_arbeitnow():
 
 
 def buscar_github():
-    vagas=[]
+    vagas = []
     for repo in REPOS_GITHUB:
         try:
-            resp = requests.get(f"https://api.github.com/repos/{repo}/issues", params={"state":"open", "per_page":100}, headers={"Accept":"application/vnd.github+json"}, timeout=15,)
+            resp = requests.get(
+                f"https://api.github.com/repos/{repo}/issues",
+                params={"state": "open", "per_page": 100},
+                headers={"Accept": "application/vnd.github+json"},
+                timeout=15,
+            )
             resp.raise_for_status()
-            issues= resp.json()
+            issues = resp.json()
         except requests.RequestException as e:
             print(f"[GitHub] erro ao buscar {repo}: {e}")
             continue
 
         for issue in issues:
             if "pull_requests" in issue:
-                continue  #é um PR n uma vaga
+                continue  # é um PR n uma vaga
 
-            titulo_bruto= issue["title"]
-            match= re.match(r"\[(.*?)\]\s*(.*)", titulo_bruto)
+            titulo_bruto = issue["title"]
+            match = re.match(r"\[(.*?)\]\s*(.*)", titulo_bruto)
             if match:
-                cidade, titulo= match.group(1), match.group(2)
+                cidade, titulo = match.group(1), match.group(2)
             else:
-                cidade, titulo= "", titulo_bruto
+                cidade, titulo = "", titulo_bruto
 
-            vagas.append( {"id": f"github-{repo.split('/')[0]}-{issue['number']}", "titulo": titulo, "empresa": "", "local": cidade, "descricao": issue.get("body") or "", "url": issue["html_url"], "publicada_em": issue["created_at"]})
+            vagas.append(
+                {
+                    "id": f"github-{repo.split('/')[0]}-{issue['number']}",
+                    "titulo": titulo,
+                    "empresa": "",
+                    "local": cidade,
+                    "descricao": issue.get("body") or "",
+                    "url": issue["html_url"],
+                    "publicada_em": issue["created_at"],
+                }
+            )
 
     print(f"[GitHub] buscadas: {len(vagas)}")
     return vagas
@@ -134,12 +149,12 @@ PALAVRAS_EXCLUIR = [
     "manager",
     "head of",
     "architect",
-    "master"
+    "master",
 ]
 LIMITE_HORAS = 30 * 24  # 30 dias em horas
 ARQUIVOS_ENVIADOS = "sent_jobs.json"
 
-REPOS_GITHUB= ["frontendbr/vagas", "backend-br/vagas"]
+REPOS_GITHUB = ["frontendbr/vagas", "backend-br/vagas"]
 
 EMAIL_FROM = os.environ.get("EMAIL_FROM")
 EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
@@ -198,7 +213,7 @@ def enviar_email(vagas):
         servidor.sendmail(EMAIL_FROM, EMAIL_TO, mensagem.as_string())
 
 
-vagas_simplificadas = buscar_remotive() + buscar_arbeitnow()
+vagas_simplificadas = buscar_remotive() + buscar_arbeitnow() + buscar_github()
 print(f"Total de vagas coletadas: {len(vagas_simplificadas)}")
 
 
@@ -223,4 +238,3 @@ if vagas_novas:
     print("E-mail enviado!")
 else:
     print("Nenhuma vaga nova pra enviar.")
-
